@@ -38,8 +38,13 @@ Graph *init_graph(int size)
 void rag_request(Graph *graph, int pid, int lockid)
 {
     node *new = new_node(lockid);
+    // printf("%d\n", new->vertex);
+
     new->next = graph->list[pid];
+
     graph->list[pid] = new;
+
+    // printf("%d\n", graph->list[pid]->vertex);
 }
 void rag_alloc(Graph *graph, int pid, int lockid)
 {
@@ -50,24 +55,22 @@ void rag_alloc(Graph *graph, int pid, int lockid)
 
 void delete_edge(Graph *g, int src, int dst)
 {
-    for (int i = 0; i < g->size; i++)
+    // node *n = g->list[0];
+    node *n = g->list[src];
+    while (n != NULL)
     {
-        node *n = g->list[i];
-        if (n->vertex == src)
+        if (n->vertex == dst)
         {
-            node *temp = n->next;
             printf("%d\n", n->vertex);
-            printf("%d\n,", n->next->vertex);
-            // while (temp != NULL)
-            // {
+            n->next = NULL;
 
-            //     if (temp->vertex == dst)
-            //     {
-            //     }
-            //     temp = temp->next;
-            // }
+            // printf("finally\n");
         }
+        n = n->next;
     }
+    // printf("%d\n", n->vertex);
+    // node *temp = n->next;
+    // printf("%d\n", temp->vertex);
 }
 void print_g(Graph *g)
 {
@@ -84,30 +87,7 @@ void print_g(Graph *g)
         printf("\n");
     }
 }
-node *find_prev(Graph *g, int v, int u)
-{
-    node *N;
-    for (int i = 0; i < g->size; i++)
-    {
-        if (g->list[i]->vertex == u)
-        {
 
-            N = g->list[i];
-            printf("here\n");
-            while (N->next != NULL)
-            {
-
-                if (N->next->vertex == v)
-                {
-                    return N;
-                }
-                N = N->next;
-            }
-            return NULL;
-        }
-    }
-    return NULL;
-}
 int cycle_util(Graph *g, int v, int *visited, int *recursive)
 {
     visited[v] = 1;
@@ -153,16 +133,19 @@ int main()
 {
     struct Graph *g = init_graph(4);
     rag_request(g, 0, 1);
+    rag_request(g, 0, 3);
     rag_request(g, 1, 2);
     rag_request(g, 2, 3);
     rag_request(g, 3, 1);
     print_g(g);
-    node *n = find_prev(g, 3, 1);
-    printf("%d\n", n->vertex);
-    // printf("**********\n");
-    // delete_edge(g, 3, 1);
-    // print_g(g);
-    //  int status = isCycle(g);
-    //  printf("%d\n", status);
+
+    printf("**********\n");
+    delete_edge(g, 3, 1);
+    print_g(g);
+
+    //  delete_edge(g, 3, 1);
+    //  print_g(g);
+    //   int status = isCycle(g);
+    //   printf("%d\n", status);
     return 0;
 }
