@@ -1,66 +1,102 @@
-#include <stdlib.h>
 #include <stdio.h>
-
-// mtrx[x][y] = 0 -> no edge
-// mtrx[x][y] = 1 -> request edge
-// mtrxp[x][y] =
-#define NLOCK 10
-#define NPROC 20
-#define SIZE = NLOCK + NPROC
-
-int edges, vertices;
-int **adj_mtrx;
-
-int **init_rag()
+#include <stdlib.h>
+#define nodes 5
+typedef struct node
 {
+    int vertex;
+    struct node *next;
+} node;
 
-    int **m = (int **)malloc(vertices * sizeof(int *));
-    for (int i = 0; i < vertices; i++)
+typedef struct Graph
+{
+    int size;
+    struct node **list;
+} Graph;
+
+node *new_node(int v)
+{
+    node *newNode = malloc(sizeof(struct node));
+    newNode->vertex = v;
+    newNode->next = NULL;
+    return newNode;
+}
+
+Graph *init_graph(int size)
+{
+    Graph *graph = malloc(sizeof(struct Graph));
+    graph->size = size;
+    graph->list = malloc(size * sizeof(struct node *));
+    for (int i = 0; i < size; i++)
     {
-        m[i] = (int *)malloc(vertices * sizeof(int));
+        graph->list[i] = NULL;
     }
-    for (int i = 0; i < vertices; i++)
+
+    return graph;
+}
+
+// Add edge
+void rag_request(Graph *graph, int pid, int lockid)
+{
+    node *new = new_node(lockid);
+    new->next = graph->list[pid];
+    graph->list[pid] = new;
+}
+void rag_alloc(Graph *graph, int pid, int lockid)
+{
+    node *new = new_node(pid);
+    new->next = graph->list[lockid];
+    graph->list[lockid] = new;
+}
+
+int cycle_util(Graph *g, int v, int *visited, int *recursive)
+{
+    visited[v] = 1;
+    recursive[v] = 1;
+
+    node *cur = g->list[v];
+    while (cur != NULL)
     {
-        for (int j = 0; j < vertices; j++)
+        if (!visited[cur->vertex] && cycle_util(g, cur->vertex, visited, recursive))
         {
-            m[i][j] = 0;
+            return 1;
+        }
+        else if (recursive[cur->vertex])
+        {
+            return 1;
+        }
+        cur = cur->next;
+    }
+    recursive[v] = 0;
+    return 0;
+}
+int isCycle(Graph *g)
+{
+    int visited[g->size];
+    int recursive_arr[g->size];
+    for (int i = 0; i < g->size; i++)
+    {
+        visited[i] = 0;
+        recursive_arr[i] = 0;
+    }
+
+    for (int i = 0; i < g->size; i++)
+    {
+        if (cycle_util(g, i, visited, recursive_arr))
+        {
+            return 1;
         }
     }
-    return m;
+    return 0;
 }
-
-void rag_request(int **mtrx, int pid, int lockid)
-{
-    mtrx[pid][lockid] = 1;
-}
-void rag_alloc(int **mtrx, int pid, int lockid)
-{
-
-    mtrx[lockid][pid] = 1;
-    mtrx[pid][lockid] = 0;
-}
-
-void rag_dealloc(int **mtrx, int pid, int lockid)
-{
-    mtrx[lockid][pid] = 0;
-    mtrx[pid][lockid] = 0;
-}
-void print_mtrx(int **mtrx)
-{
-    for (int i = 0; i < NPROC + NLOCK; i++)
-    {
-        for (int j = 0; j < NPROC + NLOCK; j++)
-        {
-            printf("%d\t", mtrx[i][j]);
-        }
-        printf("\n");
-    }
-}
-
-
 
 int main()
 {
- 
-
+    struct Graph *g = init_graph(4);
+    rag_request(g, 0, 1);
+    rag_request(g, 1, 2);
+    rag_request(g, 2, 3);
+    rag_request(g, 3, 1);
+    int status = isCycle(g);
+    printf("%d\n", status);
+    return 0;
 }
