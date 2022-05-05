@@ -55,22 +55,36 @@ void rag_alloc(Graph *graph, int pid, int lockid)
 
 void delete_edge(Graph *g, int src, int dst)
 {
-    // node *n = g->list[0];
-    node *n = g->list[src];
-    while (n != NULL)
+    node *temp = g->list[src], *ptr = g->list[src];
+    int pos = 0;
+    printf("%d\n", temp->vertex);
+    while (ptr != NULL)
     {
-        if (n->vertex == dst)
+        if (ptr->vertex == dst)
         {
-            printf("%d\n", n->vertex);
-            n->next = NULL;
-
-            // printf("finally\n");
+            break;
         }
-        n = n->next;
+        pos++;
+        ptr = ptr->next;
     }
-    // printf("%d\n", n->vertex);
-    // node *temp = n->next;
-    // printf("%d\n", temp->vertex);
+    if (pos == 0)
+    {
+        ptr = g->list[src];
+        g->list[src] = ptr->next;
+        free(ptr);
+    }
+    else
+    {
+        ptr = g->list[src];
+        for (int i = 0; i < pos; i++)
+        {
+            temp = ptr;
+            ptr = ptr->next;
+        }
+        temp->next = ptr->next;
+        printf("deleting %d\n", ptr->vertex);
+        free(ptr);
+    }
 }
 void print_g(Graph *g)
 {
@@ -140,7 +154,7 @@ int main()
     print_g(g);
 
     printf("**********\n");
-    delete_edge(g, 3, 1);
+    delete_edge(g, 1, 2);
     print_g(g);
 
     //  delete_edge(g, 3, 1);
