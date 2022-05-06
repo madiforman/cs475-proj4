@@ -1,18 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define nodes 5
-typedef struct node
-{
-    int vertex;
-    struct node *next;
-} node;
+#include "adj_list.h"
 
-typedef struct Graph
-{
-    int size;
-    struct node **list;
-} Graph;
-
+#define NLOCK 3
+#define NPROC 3
+int SIZE = NLOCK + NPROC;
 node *new_node(int v)
 {
     node *newNode = malloc(sizeof(struct node));
@@ -20,10 +12,9 @@ node *new_node(int v)
     newNode->next = NULL;
     return newNode;
 }
-
-Graph *init_graph(int size)
+RAG *init_graph(int size)
 {
-    Graph *graph = malloc(sizeof(struct Graph));
+    RAG *graph = malloc(sizeof(struct RAG));
     graph->size = size;
     graph->list = malloc(size * sizeof(struct node *));
     for (int i = 0; i < size; i++)
@@ -33,31 +24,11 @@ Graph *init_graph(int size)
 
     return graph;
 }
-
-// Add edge
-void rag_request(Graph *graph, int pid, int lockid)
-{
-    node *new = new_node(lockid);
-    // printf("%d\n", new->vertex);
-
-    new->next = graph->list[pid];
-
-    graph->list[pid] = new;
-
-    // printf("%d\n", graph->list[pid]->vertex);
-}
-void rag_alloc(Graph *graph, int pid, int lockid)
-{
-    node *new = new_node(pid);
-    new->next = graph->list[lockid];
-    graph->list[lockid] = new;
-}
-
-void delete_edge(Graph *g, int src, int dst)
+void delete_edge(RAG *g, int src, int dst)
 {
     node *temp = g->list[src], *ptr = g->list[src];
     int pos = 0;
-    printf("%d\n", temp->vertex);
+    // printf("%d\n", temp->vertex);
     while (ptr != NULL)
     {
         if (ptr->vertex == dst)
@@ -82,27 +53,55 @@ void delete_edge(Graph *g, int src, int dst)
             ptr = ptr->next;
         }
         temp->next = ptr->next;
-        printf("deleting %d\n", ptr->vertex);
+        // printf("deleting %d\n", ptr->vertex);
         free(ptr);
     }
 }
-void print_g(Graph *g)
+void rag_request(RAG *graph, int pid, int lockid)
+{
+    node *new = new_node(lockid);
+    // printf("%d\n", new->vertex);
+    new->next = graph->list[pid];
+    graph->list[pid] = new;
+    new->mode = 'P';
+
+    // printf("%d\n", graph->list[pid]->vertex);
+}
+void rag_alloc(RAG *g, int pid, int lockid)
+{
+    node *new = new_node(pid);
+    new->next = g->list[lockid];
+    g->list[lockid] = new;
+    new->mode = 'L';
+    // delete_edge(g, pid, lockid);
+}
+void rag_dealloc(RAG *g, int pid, int lockid)
+{
+    delete_edge(g, pid, lockid);
+}
+void rag_print(RAG *rag)
 {
 
-    for (int i = 0; i < g->size; i++)
+    for (int i = 0; i < rag->size; i++)
     {
-        node *temp = g->list[i];
-        printf("\nVertex %d: ", i);
+        node *temp = rag->list[i];
+        if (i < NLOCK)
+        {
+            printf("L%d -> ", i);
+        }
+        else
+        {
+            printf("P%d -> ", i - NLOCK);
+        }
         while (temp)
         {
-            printf("%d -> ", temp->vertex);
+            printf("%c%d -> ", temp->mode, temp->vertex);
             temp = temp->next;
         }
         printf("\n");
     }
 }
-
-int cycle_util(Graph *g, int v, int *visited, int *recursive)
+int dfs(RAG *g, int v, int *visited, int *recursive)
 {
     visited[v] = 1;
     recursive[v] = 1;
@@ -110,7 +109,7 @@ int cycle_util(Graph *g, int v, int *visited, int *recursive)
     node *cur = g->list[v];
     while (cur != NULL)
     {
-        if (!visited[cur->vertex] && cycle_util(g, cur->vertex, visited, recursive))
+        if (!visited[cur->vertex] && dfs(g, cur->vertex, visited, recursive))
         {
             return 1;
         }
@@ -123,7 +122,7 @@ int cycle_util(Graph *g, int v, int *visited, int *recursive)
     recursive[v] = 0;
     return 0;
 }
-int isCycle(Graph *g)
+int deadlock_detect(RAG *g)
 {
     int visited[g->size];
     int recursive_arr[g->size];
@@ -135,7 +134,7 @@ int isCycle(Graph *g)
 
     for (int i = 0; i < g->size; i++)
     {
-        if (cycle_util(g, i, visited, recursive_arr))
+        if (dfs(g, i, visited, recursive_arr))
         {
             return 1;
         }
@@ -145,21 +144,17 @@ int isCycle(Graph *g)
 
 int main()
 {
-    struct Graph *g = init_graph(4);
-    rag_request(g, 0, 1);
-    rag_request(g, 0, 3);
+    struct RAG *g = init_graph(6);
     rag_request(g, 1, 2);
-    rag_request(g, 2, 3);
-    rag_request(g, 3, 1);
-    print_g(g);
+    rag_request(g, 2, 1);
+    rag_alloc(g, 0, 3);
+    rag_alloc(g, 0, 4);
+    rag_alloc(g, 1, 4);
+    rag_print(g);
 
-    printf("**********\n");
-    delete_edge(g, 1, 2);
-    print_g(g);
-
-    //  delete_edge(g, 3, 1);
+    // delete_edge(g, 3, 1);
     //  print_g(g);
-    //   int status = isCycle(g);
-    //   printf("%d\n", status);
+    // int status = has_cycle(g);
+    // printf("%d\n", status);
     return 0;
 }
