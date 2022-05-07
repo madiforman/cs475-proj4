@@ -5,5 +5,4 @@ void rag_request(int pid, int lockid);
 void rag_alloc(int pid, int lockid);
 void rag_dealloc(int pid, int lockid);
 void rag_print();
-int dfs(int v);
 int deadlock_detect();
