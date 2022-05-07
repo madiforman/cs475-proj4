@@ -60,20 +60,17 @@ void delete_edge(RAG *g, int src, int dst)
 void rag_request(RAG *graph, int pid, int lockid)
 {
     node *new = new_node(lockid);
-    // printf("%d\n", new->vertex);
-    new->next = graph->list[pid];
-    graph->list[pid] = new;
-    new->mode = 'P';
-
-    // printf("%d\n", graph->list[pid]->vertex);
+    new->next = graph->list[pid+NLOCK];
+    graph->list[pid+NLOCK] = new;
+    new->mode = 'L';
 }
 void rag_alloc(RAG *g, int pid, int lockid)
 {
     node *new = new_node(pid);
     new->next = g->list[lockid];
     g->list[lockid] = new;
-    new->mode = 'L';
-    // delete_edge(g, pid, lockid);
+    new->mode = 'P';
+    delete_edge(g, pid, lockid);
 }
 void rag_dealloc(RAG *g, int pid, int lockid)
 {
@@ -145,11 +142,10 @@ int deadlock_detect(RAG *g)
 int main()
 {
     struct RAG *g = init_graph(6);
-    rag_request(g, 1, 2);
-    rag_request(g, 2, 1);
-    rag_alloc(g, 0, 3);
-    rag_alloc(g, 0, 4);
-    rag_alloc(g, 1, 4);
+    rag_request(g, 1, 0);
+    // rag_request(g, 2, 1);
+    rag_alloc(g, 1, 0);
+    // delete_edge(g, 1,2);
     rag_print(g);
 
     // delete_edge(g, 3, 1);
