@@ -27,27 +27,26 @@ void init_mat()
 void rag_request(int pid, int lockid)
 {
 
-    matrix[pid][lockid] = 1;
+    matrix[(SIZE / 2) + pid][lockid] = 1;
 }
 
 void rag_alloc(int pid, int lockid)
 {
-    matrix[lockid][pid] = 1;
-    matrix[pid][lockid] = 0;
+    matrix[lockid][(SIZE / 2) + pid] = 1;
+    matrix[(SIZE / 2) + pid][lockid] = 0;
 }
 
 void rag_dealloc(int pid, int lockid)
 {
-    if (matrix[lockid][pid])
+    if (matrix[lockid][(SIZE / 2) + pid])
     {
-        matrix[lockid][pid] = 0;
+        matrix[lockid][(SIZE / 2) + pid] = 0;
     }
-    if (matrix[pid][lockid])
+    if (matrix[(SIZE / 2) + pid][lockid])
     {
-        matrix[pid][lockid] = 0;
+        matrix[(SIZE / 2) + pid][lockid] = 0;
     }
 }
-
 void rag_print()
 {
     int i, j;
@@ -84,6 +83,7 @@ void rag_print()
 int dfs(int v, int *visited)
 {
     visited[v] = 1;
+    int flag = 0;
     for (int i = 0; i < SIZE; i++)
     {
         if (matrix[v][i])
@@ -91,11 +91,11 @@ int dfs(int v, int *visited)
             if (visited[v] || dfs(i, visited))
             {
                 printf("%d %d\n", v, i);
-                return 1;
+                flag = 1;
             }
         }
     }
-    return 0;
+    return flag;
 }
 int deadlock_detect()
 {
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
             {
                 printf("DEADLOCK\n");
             }
-            // rag_print();
+            rag_print();
         }
         else
         {
