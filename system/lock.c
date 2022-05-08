@@ -32,17 +32,24 @@ local	lid32	newlock(void)
 	static	lid32	nextlock = 0;	/* next lockid to try	*/
 	lid32	lockid;			/* ID to return	*/
 	int32	i;			/* iterate through # entries	*/
+	struct lockentry *lockptr;	/*	ptr to lock table	*/
 
+	for (i = 0; i < NLOCK; i++)
+	{
+		lockptr = &locktab[i];
+		if(lockptr->state == LOCK_FREE){
+			lockptr->state = LOCK_USED;
+			lockptr->lock = FALSE;
+			return lockid;
+		}
+	}
+	return SYSERR;
 	//TODO START
 
 	//TODO - loop through each element in the lock table.
-
 	//TODO - and find a lock that is free to use
-
 	//TODO - set its state to used, and reset the mutex to FALSE
-
 	//TODO - return its lockid
-
 	//TODO - if there is no such lock, return SYSERR
 
 	//TODO END
@@ -70,12 +77,18 @@ syscall	lock_delete(lid32 lockid)
 		return SYSERR;
 	}
 
+	lptr->state = LOCK_FREE;
+	lptr->lock = FALSE;
+	struct queue *q = lptr->wait_queue;
+	for(int i=0;i<q->size;i++){
+		struct qentry *qentry = getbypid(i, q);
+		remove(i, q);
+		enqueue(qentry->pid, readyqueue, qentry->key);
+	}
 	//TODO START
 
 	//TODO - reset lock's state to free and the mutex to FALSE
-
 	//TODO - remove all processes waiting on its queue, and send them to the ready queue
-
 	//TODO (RAG) - remove all RAG edges to and from this lock
 
 	//TODO END
@@ -108,6 +121,8 @@ syscall	acquire(lid32 lockid)
 		return SYSERR;
 	}
 
+	struct 	qentry *qentry = getbypid(currpid, readyqueue);
+	enqueue(currpid, lptr->wait_queue, qentry->key);
 	//TODO START
 	//TODO - enqueue the current process ID on the lock's wait queue
 	//TODO (RAG) - add a request edge in the RAG
@@ -115,6 +130,7 @@ syscall	acquire(lid32 lockid)
 
 	restore(mask);				//reenable interrupts
 
+	lptr->lock = TRUE;
 	//TODO START
 	//TODO - lock the mutex!
 	//TODO END
@@ -150,6 +166,8 @@ syscall	release(lid32 lockid)
 		return SYSERR;
 	}
 
+	remove(currpid, lptr->wait_queue);
+	lptr->lock = FALSE;
 	//TODO START
 	//TODO - remove current process' ID from the lock's queue
 

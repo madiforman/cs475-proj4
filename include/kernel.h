@@ -27,6 +27,7 @@ typedef	uint16	intmask;	/* saved interrupt mask			*/
 typedef	int32	ibid32;		/* index block ID (used in file system)	*/
 typedef	int32	dbid32;		/* data block ID (used in file system)	*/
 typedef	uint32	mutex_t;	/* define mutex_t as 32-bit unsigned int */
+typedef	int32	lid32;		/*	lock ID*/
 
 /* Function declaration return types */
 
@@ -77,4 +78,4 @@ extern	struct queue	*readyqueue;
 
 /* config params */
 #define	AGING	TRUE		/* enable or disable aging? */
-#define	QUANTUM	10		/* time slice in msecs */
+#define	QUANTUM	1		/* time slice in msecs */

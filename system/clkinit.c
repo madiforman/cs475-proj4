@@ -21,7 +21,7 @@ void	clkinit(void)
 	// TODO -- set initial value of the countdown!
 	//	clock rate is 1.193 Mhz (ticks per second). We to set countdown in such a way that
 	//	the timer goes off every 1ms
-	uint16	countdown = 1193;
+	uint16	countdown = 25;
 
 	// TODO -- Now program the initial value for countdown
 	// 	must write in two operations
