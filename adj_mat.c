@@ -80,31 +80,76 @@ void rag_print()
     }
 }
 
-int dfs(int v, int *visited)
+int dfs(int cur, int white[], int gray[], int black[])
 {
-    visited[v] = 1;
-    int flag = 0;
+    white[cur] = 0;
+    gray[cur] = 1;
+
     for (int i = 0; i < SIZE; i++)
     {
-        if (matrix[v][i])
+        if (matrix[cur][i])
         {
-            if (visited[v] || dfs(i, visited))
+
+            if (black[i] == 1)
             {
-                printf("%d %d\n", v, i);
+
+                continue;
+            }
+            if (gray[i] == 1)
+            {
+                // if (cur < NLOCK)
+                // {
+                //     printf("P%d ", cur);
+                // }
+                // else
+                // {
+                //     printf("L%d ", cur - NLOCK);
+                // }
+                return 1;
+            }
+            if (dfs(i, white, gray, black))
+            {
+
+                return 1;
+            }
+        }
+    }
+    gray[cur] = 0;
+    black[cur] = 1;
+    // printf("%d\n", black[cur]);
+    return 0;
+}
+int deadlock_detect()
+{
+    int flag = 0;
+    int white[NLOCK * NPROC], black[NLOCK * NPROC], gray[NLOCK * NPROC], visited[NLOCK * NLOCK];
+    for (int i = 0; i < SIZE; i++)
+    {
+        white[i] = 0;
+        black[i] = 0;
+        gray[i] = 0;
+    }
+    for (int i = 0; i < SIZE; i++)
+    {
+        if (!white[i])
+        {
+            if (dfs(i, white, gray, black))
+            {
+
+                if (i < NLOCK)
+                {
+                    printf("L%d\t", i);
+                }
+                else
+                {
+                    printf("P%d\t", i - NLOCK);
+                }
                 flag = 1;
             }
         }
     }
+
     return flag;
-}
-int deadlock_detect()
-{
-    int visited[SIZE];
-    for (int i = 0; i < SIZE; i++)
-    {
-        visited[i] = 0;
-    }
-    return dfs(0, visited);
 }
 int main(int argc, char *argv[])
 {
