@@ -28,25 +28,19 @@ void init_mat()
 void rag_request(int pid, int lockid)
 {
 
-    matrix[(SIZE / 2) + pid][lockid] = 1;
+    matrix[NLOCK + pid][lockid] = 1;
 }
 
 void rag_alloc(int pid, int lockid)
 {
-    matrix[lockid][(SIZE / 2) + pid] = 1;
-    matrix[(SIZE / 2) + pid][lockid] = 0;
+    matrix[lockid][NLOCK + pid] = 1;
+    matrix[NLOCK + pid][lockid] = 0;
 }
 
 void rag_dealloc(int pid, int lockid)
 {
-    if (matrix[lockid][(SIZE / 2) + pid])
-    {
-        matrix[lockid][(SIZE / 2) + pid] = 0;
-    }
-    if (matrix[(SIZE / 2) + pid][lockid])
-    {
-        matrix[(SIZE / 2) + pid][lockid] = 0;
-    }
+    matrix[NLOCK + pid][lockid] = 0;
+    matrix[lockid][NLOCK + pid] = 1;
 }
 void rag_print()
 {
@@ -168,7 +162,7 @@ int main(int argc, char *argv[])
 
                     if (i == 0 || i % 2 == 0)
                     {
-                        printf("pid=%d ", pids[i] - SIZE / 2);
+                        printf("pid=%d ", pids[i] - NLOCK);
                     }
                     else
                     {
