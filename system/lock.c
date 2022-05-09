@@ -32,15 +32,17 @@ local lid32 newlock(void)
 	static lid32 nextlock = 0; /* next lockid to try	*/
 	lid32 lockid;			   /* ID to return	*/
 	int32 i;				   /* iterate through # entries	*/
-	struct lockentry *lockptr; /*	ptr to lock table	*/
+	struct lockentry *lptr;	   /*	ptr to lock table	*/
 
 	for (i = 0; i < NLOCK; i++)
 	{
-		lockptr = &locktab[i];
-		if (lockptr->state == LOCK_FREE)
+		lptr = &locktab[i];
+		if (lptr->state == LOCK_FREE)
 		{
-			lockptr->state = LOCK_USED;
-			lockptr->lock = FALSE;
+			lockid = (lid32)i;
+			lptr->state = LOCK_USED;
+			lptr->lock = FALSE;
+
 			return lockid;
 		}
 	}
@@ -78,16 +80,17 @@ syscall lock_delete(lid32 lockid)
 		restore(mask);
 		return SYSERR;
 	}
-
 	lptr->state = LOCK_FREE;
 	lptr->lock = FALSE;
-	struct queue *q = lptr->wait_queue;
-	for (int i = 0; i < q->size; i++)
+
+	struct queue *lock_q = locktab[lockid].wait_queue;
+	pid32 temp;
+	while (nonempty(lock_q))
 	{
-		struct qentry *qentry = getbypid(i, q);
-		remove(i, q);
-		enqueue(qentry->pid, readyqueue, qentry->key);
+		temp = dequeue(lock_q);
+		enqueue(temp, readyqueue, proctab[temp].prprio);
 	}
+
 	// TODO START
 
 	// TODO - reset lock's state to free and the mutex to FALSE
@@ -124,18 +127,18 @@ syscall acquire(lid32 lockid)
 		restore(mask);
 		return SYSERR;
 	}
-	struct procent *ptold = &proctab[currpid];
-	//struct qentry *qentry = getbypid(currpid, readyqueue);
-	enqueue(currpid, lptr->wait_queue, ptold->prprio);
-	// TODO START
-	// TODO - enqueue the current process ID on the lock's wait queue
+	// struct procent *ptold = &proctab[currpid];
+	//   TODO START
+	//   TODO - enqueue the current process ID on the lock's wait queue
+	enqueue(currpid, lptr->wait_queue, proctab[currpid].prprio);
 	// TODO (RAG) - add a request edge in the RAG
 	// TODO END
 
 	restore(mask); // reenable interrupts
 
-	lptr->lock = TRUE;
 	// TODO START
+	mutex_lock(&lptr->lock);
+
 	// TODO - lock the mutex!
 	// TODO END
 
@@ -171,13 +174,13 @@ syscall release(lid32 lockid)
 		restore(mask);
 		return SYSERR;
 	}
-	
-	remove(currpid, lptr->wait_queue);
-	lptr->lock = FALSE;
+
 	// TODO START
 	// TODO - remove current process' ID from the lock's queue
-
+	remove(currpid, lptr->wait_queue);
 	// TODO - unlock the mutex
+
+	mutex_unlock(&lptr->lock);
 
 	// TODO (RAG) - remove allocation edge from RAG
 	// TODO END

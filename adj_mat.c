@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include "adj_mat.h"
 
-#define NLOCK 3
-#define NPROC 3
+#define NLOCK 10
+#define NPROC 20
 
 int SIZE = NLOCK + NPROC;
-
+int pids[NLOCK + NPROC];
+int cycles = 0;
 void init_mat()
 {
     int i, j;
@@ -50,107 +51,83 @@ void rag_dealloc(int pid, int lockid)
 void rag_print()
 {
     int i, j;
-    printf("\t");
-    for (int i = 0; i < NLOCK; i++)
-    {
-        printf("L%d\t", i);
-    }
-    for (int i = 0; i < NPROC; i++)
-    {
-        printf("p%d\t", i);
-    }
-    printf("\n");
+    // printf("\t");
+    // for (int i = 0; i < NLOCK; i++)
+    // {
+    //     printf("L%d\t", i);
+    // }
+    // for (int i = 0; i < NPROC; i++)
+    // {
+    //     printf("p%d\t", i);
+    // }
+    // printf("\n");
     for (i = 0; i < SIZE; i++)
     {
-        if (i < NLOCK)
-        {
-            printf("L%d\t", i);
-        }
-        else
-        {
-            printf("p%d\t", i - NLOCK);
-        }
+        // if (i < NLOCK)
+        // {
+        //     printf("L%d\t", i);
+        // }
+        // else
+        // {
+        //     printf("p%d\t", i - NLOCK);
+        // }
 
         for (j = 0; j < SIZE; j++)
         {
 
-            printf("%d\t", matrix[i][j]);
+            printf("%d ", matrix[i][j]);
         }
         printf("\n");
     }
 }
 
-int dfs(int cur, int white[], int gray[], int black[])
+int dfs(int v, int visited[], int recur[])
 {
-    white[cur] = 0;
-    gray[cur] = 1;
-
-    for (int i = 0; i < SIZE; i++)
+    if (!visited[v])
     {
-        if (matrix[cur][i])
+        visited[v] = 1;
+        recur[v] = 1;
+        for (int i = 0; i < SIZE; i++)
         {
-
-            if (black[i] == 1)
+            if (matrix[v][i])
             {
-
-                continue;
-            }
-            if (gray[i] == 1)
-            {
-                // if (cur < NLOCK)
-                // {
-                //     printf("P%d ", cur);
-                // }
-                // else
-                // {
-                //     printf("L%d ", cur - NLOCK);
-                // }
-                return 1;
-            }
-            if (dfs(i, white, gray, black))
-            {
-
-                return 1;
+                printf("%d\n", v);
+                if (!visited[i] && dfs(i, visited, recur))
+                {
+                    pids[cycles++] = v;
+                    return 1;
+                }
+                else if (recur[i])
+                {
+                    pids[cycles++] = v;
+                    return 1;
+                }
             }
         }
     }
-    gray[cur] = 0;
-    black[cur] = 1;
-    // printf("%d\n", black[cur]);
+    recur[v] = 0;
     return 0;
 }
 int deadlock_detect()
 {
-    int flag = 0;
-    int white[NLOCK * NPROC], black[NLOCK * NPROC], gray[NLOCK * NPROC], visited[NLOCK * NLOCK];
+    int visited[SIZE], recur[SIZE];
     for (int i = 0; i < SIZE; i++)
     {
-        white[i] = 0;
-        black[i] = 0;
-        gray[i] = 0;
+        visited[i] = 0;
+        recur[i] = 0;
     }
+    // int flag = 0;
     for (int i = 0; i < SIZE; i++)
     {
-        if (!white[i])
+        if (dfs(i, visited, recur))
         {
-            if (dfs(i, white, gray, black))
-            {
-
-                if (i < NLOCK)
-                {
-                    printf("L%d\t", i);
-                }
-                else
-                {
-                    printf("P%d\t", i - NLOCK);
-                }
-                flag = 1;
-            }
+            return 1;
         }
     }
 
-    return flag;
+    return 0;
 }
+
 int main(int argc, char *argv[])
 {
     FILE *file;
@@ -184,9 +161,23 @@ int main(int argc, char *argv[])
             }
             if (deadlock_detect())
             {
-                printf("DEADLOCK\n");
+                printf("DEADLOCK ");
+                // printf("num cycles: %d\n", cycles);
+                for (int i = 0; i < cycles; i++)
+                {
+
+                    if (i == 0 || i % 2 == 0)
+                    {
+                        printf("pid=%d ", pids[i] - SIZE / 2);
+                    }
+                    else
+                    {
+                        printf("lockid=%d ", pids[i]);
+                    }
+                }
+                printf("\n");
             }
-            rag_print();
+            // ssss rag_print();
         }
         else
         {

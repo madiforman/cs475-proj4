@@ -63,8 +63,8 @@ void philosopher(uint32 phil_id)
 		{
 			// mutex_lock(&fork[right]);	//grab the right fork (or wait)
 			acquire(forks[right]);
-			
-			if (!locktab[forks[left]].lock)
+
+			if (locktab[forks[left]].lock == FALSE)
 			{
 				// mutex_lock(&fork[left]);	//grab the left fork
 				acquire(forks[left]);
@@ -94,7 +94,8 @@ void philosopher(uint32 phil_id)
 int main(uint32 argc, uint32 *argv)
 {
 	printer_lock = lock_create();
-	for (int i = 0; i < N; i++)
+	int32 i;
+	for (i = 0; i < N; i++)
 	{
 		forks[i] = lock_create();
 	}
