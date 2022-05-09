@@ -6,8 +6,8 @@
 #define NPROC 20
 
 int SIZE = NLOCK + NPROC;
-int pids[NLOCK + NPROC];
-int cycles = 0;
+int deadlocked[NLOCK + NPROC];
+int num_cycles = 0;
 void init_mat()
 {
     int i, j;
@@ -40,7 +40,7 @@ void rag_alloc(int pid, int lockid)
 void rag_dealloc(int pid, int lockid)
 {
     matrix[NLOCK + pid][lockid] = 0;
-    matrix[lockid][NLOCK + pid] = 1;
+    matrix[lockid][NLOCK + pid] = 0;
 }
 void rag_print()
 {
@@ -85,15 +85,14 @@ int dfs(int v, int visited[], int recur[])
         {
             if (matrix[v][i])
             {
-                printf("%d\n", v);
                 if (!visited[i] && dfs(i, visited, recur))
                 {
-                    pids[cycles++] = v;
+                    deadlocked[num_cycles++] = v;
                     return 1;
                 }
-                else if (recur[i])
+                if (recur[i])
                 {
-                    pids[cycles++] = v;
+                    deadlocked[num_cycles++] = v;
                     return 1;
                 }
             }
@@ -156,17 +155,17 @@ int main(int argc, char *argv[])
             if (deadlock_detect())
             {
                 printf("DEADLOCK ");
-                // printf("num cycles: %d\n", cycles);
-                for (int i = 0; i < cycles; i++)
+                // printf("num num_cycles: %d\n", num_cycles);
+                for (int i = 0; i < num_cycles; i++)
                 {
 
                     if (i == 0 || i % 2 == 0)
                     {
-                        printf("pid=%d ", pids[i] - NLOCK);
+                        printf("pid=%d ", deadlocked[i] - NLOCK);
                     }
                     else
                     {
-                        printf("lockid=%d ", pids[i]);
+                        printf("lockid=%d ", deadlocked[i]);
                     }
                 }
                 printf("\n");
