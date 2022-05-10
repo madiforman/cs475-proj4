@@ -29,10 +29,10 @@ lid32 lock_create()
  */
 local lid32 newlock(void)
 {
-	static lid32 nextlock = 0; /* next lockid to try	*/
-	lid32 lockid;			   /* ID to return	*/
-	int32 i;				   /* iterate through # entries	*/
-	struct lockentry *lptr;	   /*	ptr to lock table	*/
+	// static lid32 nextlock = 0; /* next lockid to try	*/
+	lid32 lockid;			/* ID to return	*/
+	int32 i;				/* iterate through # entries	*/
+	struct lockentry *lptr; /*	ptr to lock table	*/
 
 	for (i = 0; i < NLOCK; i++)
 	{
@@ -84,9 +84,10 @@ syscall lock_delete(lid32 lockid)
 	lptr->lock = FALSE;
 
 	struct queue *lock_q = locktab[lockid].wait_queue;
-	pid32 temp;
+	pid32 temp = dequeue(lock_q);
 	while (nonempty(lock_q))
 	{
+		rag_dealloc(temp, lockid);
 		temp = dequeue(lock_q);
 		enqueue(temp, readyqueue, proctab[temp].prprio);
 	}
@@ -132,6 +133,7 @@ syscall acquire(lid32 lockid)
 	//   TODO - enqueue the current process ID on the lock's wait queue
 	enqueue(currpid, lptr->wait_queue, proctab[currpid].prprio);
 	// TODO (RAG) - add a request edge in the RAG
+	rag_request(currpid, lockid);
 	// TODO END
 
 	restore(mask); // reenable interrupts
@@ -146,6 +148,7 @@ syscall acquire(lid32 lockid)
 
 	// TODO START
 	// TODO (RAG) - we reache this point. Must've gotten the lock! Transform request edge to allocation edge
+	rag_alloc(currpid, lockid);
 	// TODO END
 
 	restore(mask); // reenable interrupts
@@ -183,6 +186,7 @@ syscall release(lid32 lockid)
 	mutex_unlock(&lptr->lock);
 
 	// TODO (RAG) - remove allocation edge from RAG
+	rag_dealloc(currpid, lockid);
 	// TODO END
 
 	restore(mask);

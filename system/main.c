@@ -4,106 +4,71 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define N 5 // number of philosophers and forks
+#define N 2
 
-// TODO - locks must be declared and initialized here
-//  mutex_t	lock = FALSE;
-//  mutex_t	fork[N] = {FALSE, FALSE, FALSE, FALSE, FALSE};
-lid32 printer_lock;
-lid32 forks[N];
+lid32   printer_lock;
+lid32   mylock[N];
+
 
 /**
- * Delay for a random amount of time
- * @param alpha delay factor
- */
-void holdup(int32 alpha)
+* Delay for a random amount of time
+* @param alpha delay factor
+*/
+void    holdup(int32 alpha)
 {
-	long delay = rand() * alpha;
-	while (delay-- > 0)
-		; // no op
+    long delay = rand() * alpha;
+    while (delay-- > 0)
+        ;   //no op
 }
 
 /**
- * Eat for a random amount of time
- */
-void eat()
+* Work for a random amount of time
+* @param id ID of worker
+*/
+void    work(uint32 id)
 {
-	holdup(10000);
+    acquire(printer_lock);
+    kprintf("Worker %d: Buzz buzz buzz\n", id);
+    release(printer_lock);
+    holdup(10000);
 }
 
-/**
- * Think for a random amount of time
- */
-void think()
-{
-	holdup(1000);
-}
 
 /**
- * Philosopher's code
- * @param phil_id philosopher's id
- */
-void philosopher(uint32 phil_id)
+* Worker code
+* @param id ID of worker
+*/
+void    worker(uint32 id)
 {
-	uint32 right = phil_id;					   // right fork
-	uint32 left = N - ((N - phil_id) % N) - 1; // left fork
-
-	while (TRUE)
-	{
-		// think 70% of the time
-		if ((rand() * 1.0) / RAND_MAX < 0.7)
-		{
-			acquire(printer_lock);
-			kprintf("Philosopher %d thinking: zzzzzZZZz\n", phil_id);
-			release(printer_lock);
-
-			think();
-		}
-		else // eat 30% of the time
-		{
-			// mutex_lock(&fork[right]);	//grab the right fork (or wait)
-			acquire(forks[right]);
-
-			if (locktab[forks[left]].lock == FALSE)
-			{
-				// mutex_lock(&fork[left]);	//grab the left fork
-				acquire(forks[left]);
-
-				// mutex_lock(&lock);
-				acquire(printer_lock);
-				kprintf("Philosopher %d eating: nom nom nom\n", phil_id);
-				// mutex_unlock(&lock);
-				release(printer_lock);
-
-				eat();
-
-				// mutex_unlock(&fork[left]);
-				// mutex_unlock(&fork[right]);
-				release(forks[left]);
-				release(forks[right]);
-			}
-			else
-			{
-				// mutex_unlock(&fork[right]);	//relinquish right fork
-				release(forks[right]);
-			}
-		}
-	}
+    if (id == 0)
+    {
+        acquire(mylock[0]);
+        work(id);
+        acquire(mylock[1]);
+        work(id);
+        release(mylock[1]);
+        release(mylock[0]);
+    }
+    else
+    {
+        acquire(mylock[1]);
+        work(id);
+        acquire(mylock[0]);
+        work(id);
+        release(mylock[0]);
+        release(mylock[1]);
+    }
 }
 
 int main(uint32 argc, uint32 *argv)
 {
-	printer_lock = lock_create();
-	int32 i;
-	for (i = 0; i < N; i++)
-	{
-		forks[i] = lock_create();
-	}
-	ready(create((void *)philosopher, INITSTK, 15, "Ph1", 1, 0), FALSE);
-	ready(create((void *)philosopher, INITSTK, 15, "Ph2", 1, 1), FALSE);
-	ready(create((void *)philosopher, INITSTK, 15, "Ph3", 1, 2), FALSE);
-	ready(create((void *)philosopher, INITSTK, 15, "Ph4", 1, 3), FALSE);
-	ready(create((void *)philosopher, INITSTK, 15, "Ph5", 1, 4), FALSE);
+    int i;
+    printer_lock = lock_create();
+    for (i=0; i<N; i++)
+        mylock[i] = lock_create();
 
-	return 0;
+    ready(create((void*) worker, INITSTK, 15, "Worker 0", 1, 0), FALSE);
+    ready(create((void*) worker, INITSTK, 15, "Worker 1", 1, 1), FALSE);
+
+    return 0;
 }

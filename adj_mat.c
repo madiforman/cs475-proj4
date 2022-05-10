@@ -11,16 +11,16 @@ int cycles = 0;
 void init_mat()
 {
     int i, j;
-    matrix = (int **)malloc(SIZE * sizeof(int *));
+    RAG = (int **)malloc(SIZE * sizeof(int *));
     for (i = 0; i <= SIZE; ++i)
     {
-        matrix[i] = (int *)malloc(SIZE * sizeof(int));
+        RAG[i] = (int *)malloc(SIZE * sizeof(int));
     }
     for (i = 0; i < SIZE; i++)
     {
         for (j = 0; j < SIZE; j++)
         {
-            matrix[i][j] = 0;
+            RAG[i][j] = 0;
         }
     }
 }
@@ -28,19 +28,19 @@ void init_mat()
 void rag_request(int pid, int lockid)
 {
 
-    matrix[NLOCK + pid][lockid] = 1;
+    RAG[NLOCK + pid][lockid] = 1;
 }
 
 void rag_alloc(int pid, int lockid)
 {
-    matrix[lockid][NLOCK + pid] = 1;
-    matrix[NLOCK + pid][lockid] = 0;
+    RAG[lockid][NLOCK + pid] = 1;
+    RAG[NLOCK + pid][lockid] = 0;
 }
 
 void rag_dealloc(int pid, int lockid)
 {
-    matrix[NLOCK + pid][lockid] = 0;
-    matrix[lockid][NLOCK + pid] = 1;
+    RAG[NLOCK + pid][lockid] = 0;
+    RAG[lockid][NLOCK + pid] = 0;
 }
 void rag_print()
 {
@@ -69,7 +69,7 @@ void rag_print()
         for (j = 0; j < SIZE; j++)
         {
 
-            printf("%d ", matrix[i][j]);
+            printf("%d ", RAG[i][j]);
         }
         printf("\n");
     }
@@ -83,7 +83,7 @@ int dfs(int v, int visited[], int recur[])
         recur[v] = 1;
         for (int i = 0; i < SIZE; i++)
         {
-            if (matrix[v][i])
+            if (RAG[v][i])
             {
                 printf("%d\n", v);
                 if (!visited[i] && dfs(i, visited, recur))
