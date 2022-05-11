@@ -111,6 +111,7 @@ static void sysinit(void)
 	struct memblk *memptr;	   /* ptr to memory block		*/
 	struct lockentry *lockptr; /*	ptr to lock table	*/
 	int RAG[NLOCK + NPROC][NLOCK + NPROC];
+	init_mat();
 	/* Initialize the interrupt vectors */
 
 	initevec();

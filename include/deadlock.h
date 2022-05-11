@@ -5,5 +5,6 @@ void rag_alloc(int pid, int lockid);
 void rag_dealloc(int pid, int lockid);
 void rag_print();
 int deadlock_detect();
+void deadlock_recover(int pid, int lockid);
 // TODO - add an "extern" declaration for the RAG
 extern int RAG[NLOCK + NPROC][NLOCK + NPROC];
