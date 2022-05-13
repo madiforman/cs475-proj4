@@ -5,12 +5,12 @@
 #define NPROC 20
 
 int SIZE = NLOCK + NPROC;
-int deadlocks[NLOCK + NPROC]; // holds pids/lockids in the cycle
-int RAG[NLOCK + NPROC][NLOCK + NPROC]; // the RAG
-int n_cycles = 0; // the number of pid/lockids in the cycle
+int deadlocks[NLOCK + NPROC];          /*holds pids/lockids of rag if cycle was found*/
+int RAG[NLOCK + NPROC][NLOCK + NPROC]; /*the RAG*/
+int n_cycles = 0;                      /*the number of pid/lockids in the cycle*/
 
 /**
- * This function initializes the matrix
+ * This function initializes the rag
  */
 void init_mat()
 {
@@ -75,9 +75,9 @@ void rag_print()
 
 /**
  * This function does a Depth First Search to find cycles in the RAG
- * @param v Iterator for the visited pids/lockids
+ * @param v starting vertex of search (will be 0 when called)
  * @param visited Array for visited pids/lockids
- * @param recur Array for recursed pids/lockids
+ * @param recur array to store cycles found in recursive calls
  * @return 1 if cycle is found, 0 if not found
  */
 int dfs(int v, int visited[], int recur[])
@@ -88,14 +88,14 @@ int dfs(int v, int visited[], int recur[])
         recur[v] = 1;
         for (int i = 0; i < SIZE; i++)
         {
-            if (RAG[v][i])
+            if (RAG[v][i]) /*for all adjacent nodes to v*/
             {
-                if (!visited[i] && dfs(i, visited, recur))
+                if (!visited[i] && dfs(i, visited, recur)) /*if adjacent node hasnt been visited before and recursive call to dfs returns a 1, cycle detected*/
                 {
-                    deadlocks[n_cycles++] = v;
+                    deadlocks[n_cycles++] = v; /*increment num of cycles and add vertex to deadlocked list*/
                     return 1;
                 }
-                else if (recur[i])
+                else if (recur[i]) /*else if recur[i] never got set back to 0, a cycle was found*/
                 {
                     deadlocks[n_cycles++] = v;
                     return 1;
@@ -103,7 +103,7 @@ int dfs(int v, int visited[], int recur[])
             }
         }
     }
-    recur[v] = 0;
+    recur[v] = 0; /*else reset recur[v]*/
     return 0;
 }
 
@@ -142,7 +142,7 @@ void deadlock_detect()
     /*  searching for cycles in RAG */
     for (int i = 0; i < SIZE; i++)
     {
-        if (dfs(i, visited, recur))
+        if (dfs(i, visited, recur)) /*if a cycle was found*/
         {
             kprintf("DEADLOCK DETECTED\t");
             int pid = deadlocks[0] - NLOCK, lockid = deadlocks[1];
@@ -161,7 +161,7 @@ void deadlock_recover(int pid, int lockid)
 {
     struct lockentry *lptr = &locktab[lockid];
 
-    /*  deqeue all processes in the lock's wait queue and 
+    /*  deqeue all processes in the lock's wait queue and
         add them to ready queue*/
     while (nonempty(lptr->wait_queue))
     {
@@ -181,7 +181,7 @@ void deadlock_recover(int pid, int lockid)
             remove(pid, temp->wait_queue);
         }
     }
-    
+
     mutex_unlock(&lptr->lock);
     rag_dealloc(pid, lockid);
     kprintf("DEADLOCK RECOVER\tkilling pid=%d to release lockid=%d\n", pid, lockid);
