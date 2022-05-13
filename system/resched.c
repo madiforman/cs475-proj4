@@ -9,13 +9,14 @@ int calls;
 void resched(void) // assumes interrupts are disabled
 {
 	calls++;
+	/*	check for deadlock once every 50 times resched() is called	*/
 	if (calls == 50)
 	{
 
 		intmask mask = disable(); // disable interrupts
 		deadlock_detect();
 		calls = 0;
-		restore(mask);
+		restore(mask); // reenable interrupts
 	}
 
 	pid32 oldpid = currpid;

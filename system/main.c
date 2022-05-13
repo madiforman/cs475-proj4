@@ -6,7 +6,7 @@
 
 #define N 3 // number of philosophers and forks
 
-// TODO - locks must be declared and initialized here
+/*	locks are declared and initialized	*/
 lid32 printer_lock;
 lid32 forks[N];
 
@@ -51,34 +51,26 @@ void philosopher(uint32 phil_id)
         // think 70% of the time
         if (rand() % 10 < 7)
         {
-            // mutex_lock(&lock);
             acquire(printer_lock);
             kprintf("Philosopher %d (pid=%d) thinking: zzzzzZZZz\n", phil_id, currpid);
             release(printer_lock);
-            // mutex_unlock(&lock);
 
             think();
         }
         else // eat 30% of the time
         {
-            // mutex_lock(&fork[right]); // grab the right fork (or wait)
-            // mutex_lock(&fork[left]);  // grab the left fork (or wait)
-            acquire(forks[right]);
-            acquire(forks[left]);
+            acquire(forks[right]);	// grab the right fork
+            acquire(forks[left]);	// grab the left fork 
 
             acquire(printer_lock);
-            // mutex_lock(&lock);
             kprintf("Philosopher %d (pid=%d) eating: nom nom nom\n", phil_id, currpid);
             release(printer_lock);
-            // mutex_unlock(&lock);
 
             eat();
 
             release(forks[left]);
             holdup(10000);
             release(forks[right]);
-            // mutex_unlock(&fork[left]);
-            // mutex_unlock(&fork[right]);
         }
     }
 }
