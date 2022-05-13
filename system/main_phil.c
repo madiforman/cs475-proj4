@@ -76,10 +76,11 @@ void philosopher(uint32 phil_id)
 				release(printer_lock);
 
 				eat();
-
+				holdup(10000);
 				// mutex_unlock(&fork[left]);
 				// mutex_unlock(&fork[right]);
 				release(forks[left]);
+
 				release(forks[right]);
 			}
 			else

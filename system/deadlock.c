@@ -5,9 +5,9 @@
 #define NPROC 20
 
 int SIZE = NLOCK + NPROC;
-int pids[NLOCK + NPROC];
+int deadlocks[NLOCK + NPROC];
 int RAG[NLOCK + NPROC][NLOCK + NPROC];
-int cycles = 0;
+int n_cycles = 0;
 void init_mat()
 {
     int i, j;
@@ -62,12 +62,12 @@ int dfs(int v, int visited[], int recur[])
             {
                 if (!visited[i] && dfs(i, visited, recur))
                 {
-                    pids[cycles++] = v;
+                    deadlocks[n_cycles++] = v;
                     return 1;
                 }
                 else if (recur[i])
                 {
-                    pids[cycles++] = v;
+                    deadlocks[n_cycles++] = v;
                     return 1;
                 }
             }
@@ -76,7 +76,22 @@ int dfs(int v, int visited[], int recur[])
     recur[v] = 0;
     return 0;
 }
-int deadlock_detect()
+void print_deadlocks()
+{
+    for (int i = 0; i < n_cycles; i++)
+    {
+        if (i == 0 || i % 2 == 0)
+        {
+            kprintf("pid=%d ", deadlocks[i] - NLOCK);
+        }
+        else
+        {
+            kprintf("lockid=%d ", deadlocks[i]);
+        }
+    }
+    kprintf("\n");
+}
+void deadlock_detect()
 {
     int visited[SIZE], recur[SIZE];
     for (int i = 0; i < SIZE; i++)
@@ -89,26 +104,11 @@ int deadlock_detect()
         if (dfs(i, visited, recur))
         {
             kprintf("DEADLOCK DETECTED\t");
-            int pid = pids[0] - NLOCK, lockid = pids[1];
-            for (int i = 0; i < cycles; i++)
-            {
-                if (i == 0 || i % 2 == 0)
-                {
-                    kprintf("pid=%d ", pids[i] - NLOCK);
-                }
-                else
-                {
-                    kprintf("lockid=%d ", pids[i]);
-                }
-            }
-            kprintf("\n");
+            int pid = deadlocks[0] - NLOCK, lockid = deadlocks[1];
+            print_deadlocks();
             deadlock_recover(pid, lockid);
-            cycles = 0;
-            return 1;
         }
     }
-
-    return 0;
 }
 void deadlock_recover(int pid, int lockid)
 {
@@ -120,12 +120,12 @@ void deadlock_recover(int pid, int lockid)
     }
 
     kill(pid);
-
     for (int i = 0; i < NLOCK; i++)
     {
         struct lockentry *temp = &locktab[i];
         if (getbypid(pid, temp->wait_queue) != NULL)
         {
+
             remove(pid, temp->wait_queue);
         }
     }
